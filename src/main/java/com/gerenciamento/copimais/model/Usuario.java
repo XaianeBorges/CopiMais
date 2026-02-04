@@ -1,10 +1,10 @@
 package com.gerenciamento.copimais.model;
 
+import java.util.List;
+
 import jakarta.persistence.*;
-import lombok.Data;
 
 @Entity
-@Data
 @Table(name = "usuario")    
 public class Usuario {
 
@@ -16,5 +16,11 @@ public class Usuario {
     private String username;
 
     @Column(nullable = false)
-    private String password;
+    private String senha;
+
+    @Column(nullable = false)
+        private Boolean ativo = true;
+    
+    @OneToMany(mappedBy = "usuario")
+    private List<Venda> vendas;
 }
