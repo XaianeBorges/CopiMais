@@ -1,74 +1,109 @@
 package com.gerenciamento.copimais.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
+import com.gerenciamento.copimais.config.UsuarioSessao;
+import com.gerenciamento.copimais.dtos.ItemVendaRequestDTO;
+import com.gerenciamento.copimais.dtos.ItemVendaResponseDTO;
 import com.gerenciamento.copimais.dtos.VendaRequestDTO;
+import com.gerenciamento.copimais.dtos.VendaResponseDTO;
 import com.gerenciamento.copimais.model.ItemVenda;
+import com.gerenciamento.copimais.model.Produto;
+import com.gerenciamento.copimais.model.Servico;
 import com.gerenciamento.copimais.model.Usuario;
+import com.gerenciamento.copimais.model.Venda;
 import com.gerenciamento.copimais.repository.ProdutoRepository;
 import com.gerenciamento.copimais.repository.UsuarioRepository;
 import com.gerenciamento.copimais.repository.VendaRepository;
-
+import com.gerenciamento.copimais.repository.ServicoRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
+@Service
+@RequiredArgsConstructor
 public class VendaService {
 
     private final VendaRepository vendaRepository;
-    private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
-
-    public VendaService(VendaRepository vendaRepository, UsuarioRepository usuarioRepository, ProdutoRepository produtoRepository) {
-        this.vendaRepository = vendaRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.produtoRepository = produtoRepository;
-    }
+    private final ServicoRepository servicoRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final UsuarioSessao sessao; 
 
     @Transactional
-    public Venda realizarVenda(VendaRequestDTO request){
-        Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
-            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    public VendaResponseDTO realizarVenda(VendaRequestDTO request) {
+        
+        Usuario usuario = usuarioRepository.findById(sessao.getId())
+            .orElseThrow(() -> new RuntimeException("Sessão inválida ou usuário não encontrado"));
 
-        Venda venda = new venda();
+        Venda venda = new Venda();
         venda.setUsuario(usuario);
         venda.setDataVenda(LocalDateTime.now());
+        venda.setFormaPagamento(request.formaPagamento());
         
-        Bigdecimal valorTotal = BigDecimal.ZERO;
+        BigDecimal valorTotal = BigDecimal.ZERO;
         List<ItemVenda> itensVenda = new ArrayList<>();
 
-        for (ItemVendaRequestDTO itemRequeast : request.getItens()) {
+        for (ItemVendaRequestDTO itemReq : request.itens()) {
+            ItemVenda itemVenda = new ItemVenda();
+            itemVenda.setVenda(venda);
+            itemVenda.setQuantidade(itemReq.quantidade());
 
-            Produto produto = produtoRepository.findById(itemRequest.getProdutoId())
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
-            
-            if(produto.getQuantidadeEstoque() < itemRequest.getQuantidade()){
-                throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
+            if ("PRODUTO".equalsIgnoreCase(itemReq.tipo())) {
+                Produto p = produtoRepository.findById(itemReq.id())
+                    .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+                
+                if (p.getQuantidadeEstoque() < itemReq.quantidade()) {
+                    throw new RuntimeException("Estoque insuficiente para: " + p.getNome());
+                }
+
+                p.setQuantidadeEstoque(p.getQuantidadeEstoque() - itemReq.quantidade());
+                itemVenda.setProduto(p);
+                itemVenda.setPrecoVendaUnitario(p.getPrecoVenda());
+                produtoRepository.save(p);
+
+            } else if ("SERVICO".equalsIgnoreCase(itemReq.tipo())) {
+                Servico s = servicoRepository.findById(itemReq.id())
+                    .orElseThrow(() -> new RuntimeException("Serviço não encontrado"));
+                
+                itemVenda.setServico(s);
+                itemVenda.setPrecoVendaUnitario(s.getPreco());
             }
 
-            ItemVenda itemVenda = new ItemVenda();
-            itemVenda.setProduto(produto);  
-            itemVenda.setVenda(venda);
-            itemVenda.setQuantidade(itemRequest.getQuantidade());
-            itemVenda.setPrecoVendaUnitario(produto.getPrecoVenda());
-            itemVenda.setPrecoCompraUnnitario(produto.getPrecoCompra());
-
-            BigDecimal subtotal = produto.getPrecoVenda()
-                .multiply(BigDecimal.valueOf(itemRequest.getQuantidade()));
+            BigDecimal subtotal = itemVenda.getPrecoVendaUnitario()
+                .multiply(BigDecimal.valueOf(itemReq.quantidade()));
+            
             valorTotal = valorTotal.add(subtotal);
-
-            produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - itemRequest.getQuantidade());
-
-            produtoRepository.save(produto);
             itensVenda.add(itemVenda);
-           
         }
 
         venda.setValorTotal(valorTotal);
         venda.setItens(itensVenda);
-        
+
+        Venda vendaSalva = vendaRepository.save(venda);
+        return converterParaDTO(vendaSalva);
     }
 
+    private VendaResponseDTO converterParaDTO(Venda v) {
+    
+    List<ItemVendaResponseDTO> itensDTO = v.getItens().stream()
+        .map(item -> new ItemVendaResponseDTO(
+            item.getProduto() != null ? item.getProduto().getNome() : item.getServico().getNome(),
+            item.getQuantidade(),
+            item.getPrecoVendaUnitario()
+        )).toList();
 
-
-
+    return new VendaResponseDTO(
+        v.getId(),
+        v.getDataVenda(),
+        v.getValorTotal(),
+        v.getUsuario().getUsername(),
+        v.getFormaPagamento(),
+        itensDTO 
+    );
+}
 }

@@ -1,8 +1,7 @@
 package com.gerenciamento.copimais.dtos;
 
-public class ItemVendaRequestDTO {
-
-    private Long produtoId;
-    private Integer quantidade;
-
-}
+public record ItemVendaRequestDTO(
+    Long id,          
+    Integer quantidade,
+    String tipo       
+) {}

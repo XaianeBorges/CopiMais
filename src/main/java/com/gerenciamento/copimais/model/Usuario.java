@@ -3,9 +3,15 @@ package com.gerenciamento.copimais.model;
 import java.util.List;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
-@Table(name = "usuario")    
+@Table(name = "usuarios")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor    
 public class Usuario {
 
     @Id
