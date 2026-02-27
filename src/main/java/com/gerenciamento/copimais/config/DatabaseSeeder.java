@@ -19,6 +19,24 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+      if (usuarioRepository.count() == 0) {
+          String senhaPura = "admin123";
+          String senhaHash = passwordEncoder.encode(senhaPura);
+        
+          Usuario admin = new Usuario();
+          admin.setUsername("admin");
+          admin.setSenha(senhaHash);
+          admin.setAtivo(true);
+          usuarioRepository.save(admin);
+
+          System.out.println("DEBUG: Usuario 'admin' criado.");
+          System.out.println("DEBUG: Senha Pura: " + senhaPura);
+          System.out.println("DEBUG: Hash gerado: " + senhaHash);
+        }
+    }
+
+     /* @Override
+    public void run(String... args) throws Exception {
         if (usuarioRepository.count() == 0) {
             Usuario admin = new Usuario();
             admin.setUsername("admin");
@@ -30,5 +48,6 @@ public class DatabaseSeeder implements CommandLineRunner {
             System.out.println("# USUÁRIO INICIAL CRIADO: admin / admin123 #");
             System.out.println("#########################################");
         }
-    }
+    }*/
+
 }

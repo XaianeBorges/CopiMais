@@ -34,6 +34,14 @@ public class VendaService {
     private final UsuarioRepository usuarioRepository;
     private final UsuarioSessao sessao; 
 
+    public List<VendaResponseDTO> listarTodas() {
+        List<Venda> vendas = vendaRepository.findAllByOrderByDataVendaDesc();
+        
+        return vendas.stream()
+                .map(this::converterParaDTO) 
+                .toList();
+    }
+
     @Transactional
     public VendaResponseDTO realizarVenda(VendaRequestDTO request) {
         

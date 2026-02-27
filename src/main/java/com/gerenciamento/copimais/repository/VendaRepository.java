@@ -11,5 +11,6 @@ import com.gerenciamento.copimais.model.Venda;
 public interface VendaRepository extends JpaRepository<Venda, Long> {
 
     List<Venda> findByDataVendaBetween(LocalDateTime inicio, LocalDateTime fim);
+    List<Venda> findAllByOrderByDataVendaDesc();
    
 }
