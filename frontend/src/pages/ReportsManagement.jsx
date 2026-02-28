@@ -1,57 +1,97 @@
 import { useState, useEffect } from "react";
-import { Download, TrendingUp, DollarSign, ShoppingBag, Loader2, Calendar } from "lucide-react";
+import { Download, TrendingUp, DollarSign, ShoppingBag, Loader2, Calendar, ArrowDownCircle, Wallet, AlertTriangle } from "lucide-react";
 import api from "../services/api";
+import * as XLSX from 'xlsx';
 
 export function ReportsManagement() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [vendasHistorico, setVendasHistorico] = useState([]);
+  const [products, setProducts] = useState([]);
+
+  const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const mesAtualNome = meses[new Date().getMonth()];
 
   useEffect(() => {
-    fetchDashboardData();
-    fetchHistoricoVendas();
+    fetchInitialData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchInitialData = async () => {
     try {
-      const response = await api.get("/dashboard");
-      setData(response.data);
+      setLoading(true);
+      const [resDash, resHist, resProd] = await Promise.all([
+        api.get("/dashboard"),
+        api.get("/vendas/historico"),
+        api.get("/produtos")
+      ]);
+      setData(resDash.data);
+      setVendasHistorico(resHist.data);
+      setProducts(resProd.data);
     } catch (error) {
-      console.error("Erro ao carregar dashboard", error);
+      console.error("Erro ao carregar relatórios", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchHistoricoVendas = async () => {
-    try {
-      // Endpoint que retorna a lista de VendaResponseDTO do Java
-      const response = await api.get("/vendas/historico"); 
-      setVendasHistorico(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar histórico", error);
-    }
-  };
+  const exportToExcel = () => {
+    if (!data || vendasHistorico.length === 0) return;
 
-  const downloadReport = () => {
-    const reportData = {
-      dataGeracao: new Date().toLocaleString("pt-BR"),
-      resumoFinanceiro: {
-        totalVendasHoje: data?.faturamentoTotalHoje,
-        totalPix: data?.totalPix,
-        totalCartao: data?.totalCartao,
-        totalDinheiro: data?.totalDinheiro,
-      },
-      estoqueAlerta: data?.produtosAlertaEstoque,
-      historicoVendas: vendasHistorico
-    };
+    // 1. ABA: RESUMO GERAL
+    const resumo = [
+      { "Indicador": "Faturamento Mensal", "Valor": data.faturamentoMensal },
+      { "Indicador": "Gastos (Custo Material/Insumos)", "Valor": data.custosMensal },
+      { "Indicador": "Lucro Líquido", "Valor": data.lucroMensal },
+      { "Indicador": "---", "Valor": "" },
+      { "Indicador": "Vendas em PIX", "Valor": data.totalPixMensal },
+      { "Indicador": "Vendas em CARTÃO", "Valor": data.totalCartaoMensal },
+      { "Indicador": "Vendas em DINHEIRO", "Valor": data.totalDinheiroMensal },
+    ];
 
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-copimais-${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
+    // 2. ABA: HISTÓRICO DE VENDAS (CABECALHO)
+    const historico = vendasHistorico.map(v => ({
+      "ID Venda": v.id,
+      "Data/Hora": new Date(v.dataVenda).toLocaleString('pt-BR'),
+      "Forma Pagamento": v.formaPagamento,
+      "Valor Total": v.valorTotal
+    }));
+
+    // 3. ABA: ITENS VENDIDOS (DETALHADO) - O que você pediu!
+    const itensDetalhado = [];
+    vendasHistorico.forEach(venda => {
+      venda.itens.forEach(item => {
+        itensDetalhado.push({
+          "Data": new Date(venda.dataVenda).toLocaleDateString('pt-BR'),
+          "Venda ID": venda.id,
+          "Produto/Serviço": item.nome,
+          "Qtd Vendida": item.quantidade,
+          "Preço Unitário": item.precoUnitario,
+          "Subtotal": item.quantidade * item.precoUnitario,
+          "Tipo Pagamento": venda.formaPagamento
+        });
+      });
+    });
+
+    // CRIAÇÃO DO WORKBOOK
+    const wb = XLSX.utils.book_new();
+    
+    // Converte os JSONs para planilhas
+    const wsResumo = XLSX.utils.json_to_sheet(resumo);
+    const wsHistorico = XLSX.utils.json_to_sheet(historico);
+    const wsItens = XLSX.utils.json_to_sheet(itensDetalhado);
+
+    // Toque Sênior: Configurar larguras das colunas para ficar bonito
+    wsResumo['!cols'] = [{ wch: 35 }, { wch: 15 }];
+    wsHistorico['!cols'] = [{ wch: 10 }, { wch: 25 }, { wch: 20 }, { wch: 15 }];
+    wsItens['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 35 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+    // Adiciona as abas
+    XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo Financeiro");
+    XLSX.utils.book_append_sheet(wb, wsHistorico, "Vendas (Resumo)");
+    XLSX.utils.book_append_sheet(wb, wsItens, "Itens Vendidos (Lista)");
+
+    // Salva o arquivo
+    XLSX.writeFile(wb, `Relatorio_CopiMais_${mesAtualNome}.xlsx`);
   };
 
   if (loading) return (
@@ -62,60 +102,65 @@ export function ReportsManagement() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen font-sans">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">Relatórios e Análises</h2>
-          <p className="text-gray-500">Desempenho financeiro e histórico da copiadora</p>
+          <h2 className="text-3xl font-black text-gray-800 tracking-tight">Financeiro - {mesAtualNome}</h2>
+          <p className="text-gray-500 font-medium">Relatórios detalhados de faturamento e itens</p>
         </div>
         <button
-          onClick={downloadReport}
-          className="bg-[#FF8C00] hover:bg-[#FF7F00] text-white px-5 py-2 rounded-lg font-bold shadow-md flex items-center gap-2 transition-all"
+          onClick={exportToExcel}
+          className="bg-[#FF8C00] hover:bg-[#FF7F00] text-white px-6 py-3 rounded-2xl font-black shadow-lg shadow-orange-200 flex items-center gap-2 transition-all active:scale-95"
         >
           <Download className="h-5 w-5" />
-          Baixar JSON de Fechamento
+          Exportar Planilha Completa
         </button>
       </div>
 
-      {/* Cards de Resumo (Dados vindos do DashboardService Java) */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Faturamento Hoje" value={data?.faturamentoTotalHoje} icon={<DollarSign className="text-blue-500" />} />
-        <StatCard title="Total em PIX" value={data?.totalPix} icon={<TrendingUp className="text-green-500" />} />
-        <StatCard title="Total em Cartão" value={data?.totalCartao} icon={<Calendar className="text-purple-500" />} />
-        <StatCard title="Vendas Realizadas" value={data?.totalVendasHoje} isCurrency={false} icon={<ShoppingBag className="text-orange-500" />} />
+      {/* Cards de Desempenho Mensal */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <StatCard title="Faturamento Mensal" value={data?.faturamentoMensal} icon={<DollarSign className="text-blue-500" />} color="text-blue-600" />
+        <StatCard title="Gastos (Custo de Itens)" value={data?.custosMensal} icon={<ArrowDownCircle className="text-red-500" />} color="text-red-600" />
+        <StatCard title="Lucro Líquido" value={data?.lucroMensal} icon={<TrendingUp className="text-green-500" />} color="text-green-600" />
+      </div>
+
+      {/* Pagamentos */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <MiniCard title="Total em Dinheiro" value={data?.totalDinheiroMensal} icon={<Wallet className="text-orange-400" />} />
+        <MiniCard title="Total em PIX" value={data?.totalPixMensal} icon={<TrendingUp className="text-green-400" />} />
+        <MiniCard title="Total em Cartão" value={data?.totalCartaoMensal} icon={<Calendar className="text-purple-400" />} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Produtos com Estoque Baixo */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Loader2 className="h-5 w-5 text-red-500" /> Alertas de Estoque
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800">
+            <AlertTriangle className="h-5 w-5 text-red-500" /> Alertas de Estoque
           </h3>
-          <div className="space-y-4">
-            {data?.produtosAlertaEstoque.length === 0 ? (
-              <p className="text-gray-400 text-sm italic">Tudo em dia com o estoque.</p>
-            ) : (
-              data?.produtosAlertaEstoque.map((p, i) => (
-                <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                  <span className="font-medium text-gray-700">{p.nome}</span>
-                  <span className="text-red-600 font-bold">{p.quantidadeAtual} un</span>
-                </div>
-              ))
-            )}
+          <div className="space-y-3">
+            {data?.produtosAlertaEstoque?.map((p, i) => (
+              <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-2xl">
+                <span className="font-bold text-gray-700">{p.nome}</span>
+                <span className="text-red-600 font-black">{p.quantidadeAtual} un</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Histórico Recente */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-4">Últimas Vendas</h3>
-          <div className="space-y-3">
-            {vendasHistorico.slice(0, 5).map((venda) => (
-              <div key={venda.id} className="flex justify-between items-center border-b pb-2">
-                <div>
-                  <p className="text-sm font-bold text-gray-800">Venda #{venda.id}</p>
-                  <p className="text-xs text-gray-400">{venda.formaPagamento}</p>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold mb-4 text-gray-800">Últimas Vendas</h3>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+            {vendasHistorico.slice(0, 10).map((venda) => (
+              <div key={venda.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-black text-gray-700">Venda #{venda.id}</span>
+                  <span className="text-[#FF8C00] font-black">R$ {venda.valorTotal.toFixed(2)}</span>
                 </div>
-                <span className="text-[#FF8C00] font-bold">R$ {venda.valorTotal.toFixed(2)}</span>
+                <div className="flex flex-wrap gap-1">
+                  {venda.itens.map((item, idx) => (
+                    <span key={idx} className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-full text-gray-500 font-bold">
+                      {item.nome} x{item.quantidade}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -125,17 +170,26 @@ export function ReportsManagement() {
   );
 }
 
-// Componente de Card de Estatística (Tailwind Puro)
-function StatCard({ title, value, icon, isCurrency = true }) {
+function StatCard({ title, value, icon, color }) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
       <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <h4 className="text-2xl font-bold text-gray-800">
-          {isCurrency ? `R$ ${value?.toFixed(2) || "0.00"}` : value}
-        </h4>
+        <p className="text-xs text-gray-400 font-black uppercase tracking-widest mb-1">{title}</p>
+        <h4 className={`text-2xl font-black ${color}`}>R$ {value?.toFixed(2) || "0.00"}</h4>
       </div>
+      <div className="bg-gray-50 p-4 rounded-2xl">{icon}</div>
+    </div>
+  );
+}
+
+function MiniCard({ title, value, icon }) {
+  return (
+    <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
       <div className="bg-gray-50 p-3 rounded-xl">{icon}</div>
+      <div>
+        <p className="text-[10px] text-gray-400 font-black uppercase">{title}</p>
+        <p className="text-lg font-black text-gray-700">R$ {value?.toFixed(2) || "0.00"}</p>
+      </div>
     </div>
   );
 }

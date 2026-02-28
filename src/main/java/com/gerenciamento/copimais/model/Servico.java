@@ -27,6 +27,9 @@ public class Servico {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal preco; 
 
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal precoCusto;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 }

@@ -72,6 +72,7 @@ public class VendaService {
                 p.setQuantidadeEstoque(p.getQuantidadeEstoque() - itemReq.quantidade());
                 itemVenda.setProduto(p);
                 itemVenda.setPrecoVendaUnitario(p.getPrecoVenda());
+                itemVenda.setPrecoCompraUnitario(p.getPrecoCompra());
                 produtoRepository.save(p);
 
             } else if ("SERVICO".equalsIgnoreCase(itemReq.tipo())) {
@@ -80,6 +81,7 @@ public class VendaService {
                 
                 itemVenda.setServico(s);
                 itemVenda.setPrecoVendaUnitario(s.getPreco());
+                itemVenda.setPrecoCompraUnitario(s.getPrecoCusto());
             }
 
             BigDecimal subtotal = itemVenda.getPrecoVendaUnitario()

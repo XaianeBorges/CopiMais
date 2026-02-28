@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gerenciamento.copimais.config.UsuarioSessao;
+import com.gerenciamento.copimais.dtos.DashboardDTO;
 import com.gerenciamento.copimais.service.DashboardService;
 
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,10 @@ public class DashboardController {
     private final UsuarioSessao sessao;
 
     @GetMapping
-    public ResponseEntity<?> getResumo() {
-        if (!sessao.isLogado()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    public ResponseEntity<DashboardDTO> getResumo() { 
+       if (!sessao.isLogado()) {
+           return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
-        return ResponseEntity.ok(dashboardService.gerarResumoHoje());
+        return ResponseEntity.ok(dashboardService.gerarResumoCompleto());
     }
 }

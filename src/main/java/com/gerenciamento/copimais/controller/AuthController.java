@@ -3,6 +3,9 @@ package com.gerenciamento.copimais.controller;
 import com.gerenciamento.copimais.config.UsuarioSessao; 
 import com.gerenciamento.copimais.model.Usuario;
 import com.gerenciamento.copimais.repository.UsuarioRepository;
+
+import jakarta.servlet.http.HttpSession;
+
 import com.gerenciamento.copimais.dtos.UsuarioDTO.UsuarioResponse; 
 import com.gerenciamento.copimais.dtos.UsuarioDTO.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +40,18 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpSession session) {
+       sessao.deslogar();
+       if (session != null) {
+          session.invalidate();
+        }
+
+        System.out.println("DEBUG: Sessão encerrada com sucesso.");
+    
+        return ResponseEntity.ok("Logout realizado com sucesso");
+    }  
 
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponse> getUsuarioLogado() {

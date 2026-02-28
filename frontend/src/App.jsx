@@ -5,6 +5,7 @@ import { ProductsManagement } from "./pages/ProductsManagement";
 import { StockManagement } from "./pages/StockManagement";
 import { SalesManagement } from "./pages/SalesManagement";
 import { ReportsManagement } from "./pages/ReportsManagement";
+import { ServicesManagement } from "./pages/ServicesManagement";
 import { Layout } from "./components/Layout";
 import { Loader2 } from "lucide-react";
 import api from "./services/api";
@@ -44,6 +45,7 @@ export default function App() {
           <Route element={<Layout userName={userName} />}>
             <Route path="/vendas" element={<SalesManagement />} />
             <Route path="/produtos" element={<ProductsManagement />} />
+            <Route path="/servicos" element={<ServicesManagement />} />
             <Route path="/estoque" element={<StockManagement />} />
             <Route path="/relatorios" element={<ReportsManagement />} />
             {/* Redireciona a raiz para vendas */}

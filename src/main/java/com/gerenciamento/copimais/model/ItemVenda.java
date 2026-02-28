@@ -19,6 +19,9 @@ public class ItemVenda {
     @Column(nullable = false)
     private BigDecimal precoVendaUnitario;
 
+    @Column(nullable = false)
+    private BigDecimal precoCompraUnitario;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venda_id", nullable = false)
     private Venda venda;

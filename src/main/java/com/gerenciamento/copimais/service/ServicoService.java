@@ -1,7 +1,11 @@
 package com.gerenciamento.copimais.service;
 
+import com.gerenciamento.copimais.dtos.ServicoRequestDTO;
+import com.gerenciamento.copimais.dtos.ServicoResponseDTO;
 import com.gerenciamento.copimais.model.Servico;
 import com.gerenciamento.copimais.repository.ServicoRepository;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -12,23 +16,33 @@ public class ServicoService {
 
     private final ServicoRepository repository;
 
-    public List<Servico> listarTodos() {
-        return repository.findAll();
+    public List<ServicoResponseDTO> listarTodosAtivos() {
+        return repository.findAll().stream()
+                .filter(Servico::getAtivo)
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    public Servico salvar(Servico servico) {
-        if (servico.getPreco().doubleValue() < 0) {
-            throw new RuntimeException("O preço do serviço não pode ser negativo.");
-        }
-        return repository.save(servico);
+    @Transactional
+    public ServicoResponseDTO salvar(ServicoRequestDTO dto) {
+        Servico s = new Servico();
+        s.setNome(dto.nome());
+        s.setDescricao(dto.descricao());
+        s.setPreco(dto.preco());
+        s.setPrecoCusto(dto.precoCusto());
+        s.setAtivo(true);
+        return mapToResponse(repository.save(s));
     }
 
-    public void deletar(Long id) {
-        repository.deleteById(id);
-    }
-    
-    public Servico buscarPorId(Long id) {
-        return repository.findById(id)
+    @Transactional
+    public void deletarLogico(Long id) {
+        Servico s = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Serviço não encontrado"));
+        s.setAtivo(false); 
+        repository.save(s);
+    }
+
+    private ServicoResponseDTO mapToResponse(Servico s) {
+        return new ServicoResponseDTO(s.getId(), s.getNome(), s.getDescricao(), s.getPreco(), s.getPrecoCusto(), s.getAtivo());
     }
 }

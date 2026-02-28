@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { Copy, Package, Warehouse, ShoppingCart, FileText, LogOut } from "lucide-react";
+import { Copy, Package, Warehouse, ShoppingCart, FileText, LogOut, Scissors  } from "lucide-react";
 import api from "../services/api";
 
 export function Layout({ userName }) {
@@ -8,15 +8,17 @@ export function Layout({ userName }) {
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
-      navigate("/login");
+      window.location.href = "/login"; 
     } catch (error) {
       console.error("Erro ao deslogar", error);
+      window.location.href = "/login";
     }
   };
 
   const menuItems = [
     { path: "/vendas", label: "Vendas", icon: ShoppingCart },
-    { path: "/produtos", label: "Cadastros", icon: Package },
+    { path: "/produtos", label: "Produtos", icon: Package },
+    { path: "/servicos", label: "Serviços", icon: Scissors },
     { path: "/estoque", label: "Estoque", icon: Warehouse },
     { path: "/relatorios", label: "Financeiro", icon: FileText },
   ];
