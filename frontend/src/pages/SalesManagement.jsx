@@ -9,7 +9,7 @@ export function SalesManagement() {
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("DINHEIRO");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("PRODUTO"); // Alternar entre Produto e Serviço
+  const [activeTab, setActiveTab] = useState("PRODUTO"); 
 
   // 1. Carregar dados iniciais
   useEffect(() => {

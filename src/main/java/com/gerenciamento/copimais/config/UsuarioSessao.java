@@ -20,6 +20,7 @@ public class UsuarioSessao implements Serializable {
         this.id = usuario.getId();
         this.username = usuario.getUsername();
         this.dataLogin = LocalDateTime.now();
+        System.out.println("DEBUG: Sessão preenchida para: " + this.username); 
     }
 
     public void deslogar() {

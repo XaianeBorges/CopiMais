@@ -15,7 +15,7 @@ export function Layout({ userName }) {
   };
 
   const menuItems = [
-    { path: "/vendas", label: "Vendas (PDV)", icon: ShoppingCart },
+    { path: "/vendas", label: "Vendas", icon: ShoppingCart },
     { path: "/produtos", label: "Cadastros", icon: Package },
     { path: "/estoque", label: "Estoque", icon: Warehouse },
     { path: "/relatorios", label: "Financeiro", icon: FileText },

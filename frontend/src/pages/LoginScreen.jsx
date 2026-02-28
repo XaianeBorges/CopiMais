@@ -23,15 +23,11 @@ export function LoginScreen() {
       });
 
       if (response.status === 200) {
-        // Sucesso! O Java criou a sessão e mandou o cookie.
-        // O Axios (withCredentials) cuidará do resto.
-        navigate("/dashboard");
+
+        window.location.href = "/vendas"; 
       }
     } catch (err) {
-      console.error(err);
-      setError("Usuário ou senha incorretos.");
-    } finally {
-      setLoading(false);
+       setError("Usuário ou senha incorretos.");
     }
   };
 

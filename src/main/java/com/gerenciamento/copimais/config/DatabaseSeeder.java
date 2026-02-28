@@ -34,20 +34,4 @@ public class DatabaseSeeder implements CommandLineRunner {
           System.out.println("DEBUG: Hash gerado: " + senhaHash);
         }
     }
-
-     /* @Override
-    public void run(String... args) throws Exception {
-        if (usuarioRepository.count() == 0) {
-            Usuario admin = new Usuario();
-            admin.setUsername("admin");
-            admin.setSenha(passwordEncoder.encode("admin123"));
-            
-            usuarioRepository.save(admin);
-            
-            System.out.println("#########################################");
-            System.out.println("# USUÁRIO INICIAL CRIADO: admin / admin123 #");
-            System.out.println("#########################################");
-        }
-    }*/
-
 }
