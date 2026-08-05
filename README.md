@@ -3,12 +3,9 @@ CopiMais
 
 Este repositório contém a aplicação CopiMais (backend Spring Boot + frontend React/Vite).
 
-Objetivo deste commit
-- Ajuste do frontend para permitir uso em produção (URL relativa / variável de ambiente).
-- Automatização do build do frontend dentro do build Maven do backend (plugins adicionados no pom.xml).
-- Criação de scripts de execução (run.bat, run.sh) e README com instruções básicas.
+Esse app tem por objetivo ajudar no gerenciamento de uma copiadora, permitindo cadastrar produtos, registrar vendas , e ver quanto foi arrecadado durante o mês.
 
-Pre-requisitos para compilar (desenvolvedor que vai gerar o artefato)
+Pre-requisitos para compilar 
 - Java JDK 17+
 - Maven 3.6+
 - Node.js 16/18+ e npm (caso prefira rodar frontend manualmente)
@@ -37,11 +34,6 @@ Observações para distribuição ao usuário final
 Configurações importantes
 - Banco de dados: um arquivo SQLite será criado em: ${user.home}/copimais-app/dados.db
 - Usuário inicial: DatabaseSeeder cria um usuário "admin" com senha "admin123" na primeira execução (ver DatabaseSeeder.java).
-- A frontend agora usa, por padrão, '/api' como baseURL. Para apontar para outro backend em tempo de execução, definir a variável de ambiente VITE_API_URL antes do build do frontend (ex.: VITE_API_URL="https://meu-servidor:8080/api").
-
-Segurança / Produção
-- Revise o SecurityConfig e CORS antes de expor a aplicação à Internet. O projeto atualmente tem CORS bastante permissivo para facilitar desenvolvimento.
-- Considere habilitar HTTPS e ajustar política de sessão/cookies para produção.
 
 Como testar localmente (alternativa manual)
 1. Build frontend manualmente (opcional):
