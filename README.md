@@ -58,13 +58,4 @@ Como testar localmente (alternativa manual)
    mvn clean package -DskipTests
    java -jar target/copimais-0.0.1-SNAPSHOT.jar
 
-Ajuda / Próximos passos recomendados
-- (Opcional) Gerar instaladores nativos com jpackage para Windows/macOS/Linux.
-- Revisar e reforçar regras de segurança (endpoints protegidos, CORS, HTTPS).
-- Adicionar backup/rotina de migração do arquivo dados.db.
 
-Se quiser, posso:
-- Commitar essas mudanças em uma branch e criar um README mais detalhado com imagens ou passos de empacotamento com jpackage.
-- Gerar um script que automaticamente copie e renomeie o jar para distribuição.
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
