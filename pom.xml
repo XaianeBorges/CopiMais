@@ -74,6 +74,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>copimais</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -109,12 +110,25 @@
 					<installDirectory>${project.basedir}/frontend/node</installDirectory>
 				</configuration>
 				<executions>
+					<!-- Instala uma versão conhecida do Node/npm antes dos comandos npm -->
+					<execution>
+						<id>install node and npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<nodeVersion>v20.19.0</nodeVersion>
+							<npmVersion>10.8.2</npmVersion>
+						</configuration>
+					</execution>
 					<!-- npm install -->
 					<execution>
 						<id>npm install</id>
 						<goals>
 							<goal>npm</goal>
 						</goals>
+						<phase>generate-resources</phase>
 						<configuration>
 							<arguments>install</arguments>
 							<workingDirectory>frontend</workingDirectory>
